@@ -10,6 +10,7 @@ import Navbar from "./componentes/Navbar";
 import LandingPage from "./componentes/LandingPage";
 import SignUp from "./componentes/SignUp";
 import AvisosPWA from "./pwa/AvisosPWA";
+import PromoInstalacion from "./pwa/PromoInstalacion";
 
 export default function App() {
     const [user, setUser] = useState(null);
@@ -69,6 +70,7 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <AvisosPWA />
+            <PromoInstalacion />
         </Router>
     );
 }

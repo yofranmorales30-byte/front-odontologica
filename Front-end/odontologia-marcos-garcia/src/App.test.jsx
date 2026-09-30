@@ -48,6 +48,18 @@ test('si el servidor rechaza el token guardado, se borra y se muestra el login',
   await waitFor(() => expect(sessionStorage.getItem('armonia.token')).toBeNull());
 });
 
+test('el paciente ve el día y la hora de sus citas', async () => {
+  sessionStorage.setItem('armonia.token', 'token-paciente');
+  mockApi({
+    '/me': [200, { token: 't', id_user: 5, name_user: 'Ana Pérez', fk_rol: 4, nombre_rol: 'Paciente', id_paciente: 3 }],
+    '/mis-citas': [200, [{ id_citas: 9, date_cita: '2030-03-12T16:00:00', time_cita: '2', desc_cita: 'Limpieza', status_cita: 'PENDIENTE' }]],
+  });
+
+  render(<App />);
+
+  expect(await screen.findByText('mar, 12 mar 2030 · 16:00–18:00 hs')).toBeTruthy();
+});
+
 test('una ruta que no existe vuelve al inicio (en vez de una página vacía)', async () => {
   mockApi({});
   window.history.pushState({}, '', '/no-existe');

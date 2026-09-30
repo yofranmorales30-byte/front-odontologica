@@ -10,6 +10,7 @@ import { FiUserPlus, FiLogIn } from 'react-icons/fi';
 import { apiFetch } from '../api';
 import { movil } from '../estilos/medidas';
 import EtiquetaEstado from './EtiquetaEstado';
+import { fechaHoraCita } from '../utils/formato';
 
 // El panel del personal trae FullCalendar (la mayor parte del bundle): se descarga solo si hace falta
 const Dashboard = lazy(() => import('./Dashboard'));
@@ -250,12 +251,6 @@ const ErrorState = styled.div`
   font-size: 0.9rem;
 `;
 
-function formatDateShort(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 // ─── Componente PatientDashboard ───
 
 function PatientDashboard({ user, onLogout }) {
@@ -350,7 +345,7 @@ function PatientDashboard({ user, onLogout }) {
         {!loading && citas.map((c, i) => (
           <CitaCard key={c.id_citas || i}>
             <CitaInfo>
-              <CitaFecha>{formatDateShort(c.date_cita)}</CitaFecha>
+              <CitaFecha>{fechaHoraCita(c.date_cita, c.time_cita)}</CitaFecha>
               <CitaDesc>{c.desc_cita || 'Sin descripción'}</CitaDesc>
             </CitaInfo>
             <EtiquetaEstado estado={c.status_cita || 'PENDIENTE'} />

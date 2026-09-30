@@ -46,7 +46,7 @@ Frontend (`Front-end/odontologia-marcos-garcia/.env`):
 
 | Variable | Por defecto |
 |---|---|
-| `VITE_API_URL` | `http://localhost:3001/api` (en Vercel es obligatoria y con `https://`) |
+| `VITE_API_URL` | `http://localhost:3001/api` en desarrollo; en el build, la de `.env.production` (la API en Vercel) |
 
 ## Base de datos (Turso)
 
@@ -83,7 +83,7 @@ Qué tiene en cuenta el código:
 Es otro proyecto de Vercel, desde el mismo repositorio.
 
 1. **Crear el proyecto** con **Root Directory = `Front-end/odontologia-marcos-garcia`**. El resto (Vite, `npm run build`, carpeta `build/`) lo toma de `vercel.json`.
-2. **Variable de entorno** `VITE_API_URL` = la URL de la API con `/api` al final, p. ej. `https://<api>.vercel.app/api`. Tiene que ser `https://`. Si falta o es `http://`, el build falla a propósito: el sitio publicado no podría hablar con la API.
+2. **URL de la API:** ya está en `Front-end/odontologia-marcos-garcia/.env.production` (`https://front-odontologica.vercel.app/api`). Vite solo la usa en el build, así que `npm run dev` sigue usando la API local. Si ese archivo está en el repositorio no hace falta cargar nada en Vercel; también se puede importar desde *Settings → Environment Variables → Import .env*. Una variable `VITE_API_URL` cargada en Vercel tiene prioridad sobre el archivo. Tiene que ser `https://`: si falta o es `http://`, el build falla a propósito.
 3. **Redesplegar si cambia la API:** `VITE_API_URL` queda fija en el código al hacer el build, así que cambiarla en Vercel no alcanza, hay que volver a desplegar.
 
 Qué tiene en cuenta `vercel.json`:
@@ -97,6 +97,7 @@ Qué tiene en cuenta `vercel.json`:
 El frontend se puede instalar en el celular o la computadora como una app, con el ícono de Armonía.
 
 - **Instalar:** en Android, Chrome o Edge aparece "Instalar app" en el menú de la página (o en la barra del navegador). En iPhone: Compartir → "Agregar a inicio".
+- **Invitación en el celular:** en la página de inicio, a los 4 segundos, un panel invita a instalarla (en iPhone explica los pasos). No aparece en la computadora, en los formularios ni con la app ya instalada, y si la persona elige "Ahora no" no vuelve por 14 días (`src/pwa/PromoInstalacion.jsx`).
 - **Sin conexión:** la app abre igual (página, login y formularios quedan guardados), pero los turnos y los datos de pacientes **nunca se guardan en el dispositivo**: siempre se piden al servidor. Sin internet se muestra un aviso.
 - **Actualizaciones:** cuando se publica una versión nueva, la app avisa y el usuario elige cuándo actualizar, para no perder un formulario a medio completar.
 - **Probarla:** el service worker no se activa con `npm run dev`. Usar `npm run build && npm run preview`. En producción tiene que servirse por **HTTPS** (los navegadores solo permiten service workers en HTTPS o en `localhost`).
