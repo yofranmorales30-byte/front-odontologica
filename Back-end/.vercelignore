@@ -1,0 +1,5 @@
+# No subir a Vercel (el CLI no excluye .env por defecto)
+.env
+*.db
+*.db-*
+test
