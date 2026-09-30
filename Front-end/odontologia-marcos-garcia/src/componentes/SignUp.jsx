@@ -6,7 +6,7 @@ import AppointmentForm from './AppointmentForm';
 import AppointmentSuccess from './AppointmentSuccess';
 import BackgroundSlider from './BackgroundSlider';
 import Boton from '../elementos/boton.js';
-import { FiUserPlus, FiLogIn } from 'react-icons/fi';
+import { FiUserPlus, FiLogIn, FiClipboard } from 'react-icons/fi';
 import { apiFetch } from '../api';
 import { movil } from '../estilos/medidas';
 import EtiquetaEstado from './EtiquetaEstado';
@@ -161,6 +161,10 @@ const SectionTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+
+  svg {
+    color: #5c0e6d;
+  }
 `;
 
 const CitaCard = styled.div`
@@ -330,7 +334,7 @@ function PatientDashboard({ user, onLogout }) {
           + Agendar nuevo turno
         </NewAppointmentBtn>
 
-        <SectionTitle>📋 Mis citas</SectionTitle>
+        <SectionTitle><FiClipboard aria-hidden /> Mis citas</SectionTitle>
 
         {loading && <LoadingState>Cargando tus citas...</LoadingState>}
         {error && <ErrorState>Error: {error}</ErrorState>}

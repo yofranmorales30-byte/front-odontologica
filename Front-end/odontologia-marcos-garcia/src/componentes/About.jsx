@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { NavLink } from "react-router-dom";
+import { FiTarget, FiEye } from "react-icons/fi";
 
 const PageSection = styled.div`
     min-height: calc(100vh - 70px);
@@ -127,6 +128,7 @@ const MvIconWrap = styled.div`
     justify-content: center;
     font-size: 1.6rem;
     margin-bottom: 20px;
+    color: ${props => (props.$accent === "vision" ? "#7c3aed" : "#4d7c0f")};
     background: ${props =>
         props.$accent === "vision"
             ? "linear-gradient(135deg, #f3e8ff, #e9d5ff)"
@@ -319,7 +321,7 @@ const About = () => {
 
             <CardsRow>
                 <MvCard $accent="mision">
-                    <MvIconWrap $accent="mision">🎯</MvIconWrap>
+                    <MvIconWrap $accent="mision"><FiTarget aria-hidden /></MvIconWrap>
                     <MvTitle>Nuestra Misión</MvTitle>
                     <MvText>
                         Brindar servicios odontológicos y de estética facial de alta calidad,
@@ -329,7 +331,7 @@ const About = () => {
                 </MvCard>
 
                 <MvCard $accent="vision">
-                    <MvIconWrap $accent="vision">🔭</MvIconWrap>
+                    <MvIconWrap $accent="vision"><FiEye aria-hidden /></MvIconWrap>
                     <MvTitle>Nuestra Visión</MvTitle>
                     <MvText>
                         Ser la clínica odontológica de referencia en la región, reconocida

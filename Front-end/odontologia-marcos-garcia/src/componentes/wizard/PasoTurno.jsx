@@ -1,9 +1,9 @@
 import React from 'react';
-import { FiAlertCircle } from 'react-icons/fi';
+import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import { hoyStr, horaActualStr, ultimoInicio } from '../../utils/agenda';
 import {
   StepTitle, StepDescription, InfoText, FieldGrid, FieldGroup, FieldLabel, FieldInput, FieldSelect,
-  ErrorText, WarningBox,
+  ErrorText, OkText, WarningBox,
 } from './estilos';
 
 // Paso "turno": fecha, hora y duración, con los avisos de disponibilidad y horario de atención.
@@ -59,7 +59,7 @@ export default function PasoTurno({ titulo, descripcion, form, setForm, turno, c
       )}
 
       {isDateValid && bookedRanges.length === 0 && !cargando && (
-        <InfoText style={{ marginTop: 8 }}>✅ Todos los horarios están disponibles para esta fecha.</InfoText>
+        <OkText><FiCheckCircle aria-hidden /> Todos los horarios están disponibles para esta fecha.</OkText>
       )}
 
       <FieldGroup style={{ marginTop: 8 }}>

@@ -299,6 +299,12 @@ export const ErrorText = styled.p`
   gap: 6px;
 `;
 
+// Como ErrorText, pero para buenas noticias (p. ej. todos los horarios libres)
+export const OkText = styled(ErrorText)`
+  font-size: 0.8rem;
+  color: #15803d;
+`;
+
 export const WarningBox = styled.div`
   background: #fef3c7;
   border: 1px solid #fde68a;
