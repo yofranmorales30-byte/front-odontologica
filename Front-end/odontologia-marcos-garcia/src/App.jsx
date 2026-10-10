@@ -70,7 +70,7 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <AvisosPWA />
-            <PromoInstalacion />
+            <PromoInstalacion sesion={!user ? null : user.nombre_rol === 'Paciente' ? 'paciente' : 'personal'} />
         </Router>
     );
 }

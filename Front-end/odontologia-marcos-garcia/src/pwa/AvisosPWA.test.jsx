@@ -40,6 +40,17 @@ test('avisa cuando se pierde la conexión y deja de avisar al volver', () => {
   expect(screen.queryByRole('status')).toBeNull();
 });
 
+test('avisa cuando la app termina de instalarse y el aviso se va solo', () => {
+  vi.useFakeTimers();
+  render(<AvisosPWA />);
+  act(() => { window.dispatchEvent(new Event('appinstalled')); });
+  expect(screen.getByRole('status').textContent).toMatch(/ya está instalada/);
+
+  act(() => { vi.advanceTimersByTime(7000); });
+  expect(screen.queryByRole('status')).toBeNull();
+  vi.useRealTimers();
+});
+
 test('con una versión nueva ofrece actualizar o posponer', () => {
   mockVersionNueva = true;
   render(<AvisosPWA />);

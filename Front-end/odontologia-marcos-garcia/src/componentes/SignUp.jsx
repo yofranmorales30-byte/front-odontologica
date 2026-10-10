@@ -6,7 +6,8 @@ import AppointmentForm from './AppointmentForm';
 import AppointmentSuccess from './AppointmentSuccess';
 import BackgroundSlider from './BackgroundSlider';
 import Boton from '../elementos/boton.js';
-import { FiUserPlus, FiLogIn, FiClipboard } from 'react-icons/fi';
+import { FiUserPlus, FiLogIn, FiClipboard, FiDownload } from 'react-icons/fi';
+import { useOfrecerInstalacion } from '../pwa/useInstalarApp';
 import { apiFetch } from '../api';
 import { movil } from '../estilos/medidas';
 import EtiquetaEstado from './EtiquetaEstado';
@@ -144,6 +145,35 @@ const PatientRole = styled.span`
   border-radius: 20px;
 `;
 
+const AccionesEncabezado = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+// "Instalar app": solo aparece si el navegador permite instalarla y todavía no está instalada
+const BotonInstalar = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+`;
+
 const PatientBody = styled.div`
   padding: 28px 36px 36px;
 
@@ -262,6 +292,7 @@ function PatientDashboard({ user, onLogout }) {
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const instalacion = useOfrecerInstalacion();
 
   // Volver a la lista: el "cargando" se prende acá, no dentro del efecto
   const verCitas = () => {
@@ -324,9 +355,16 @@ function PatientDashboard({ user, onLogout }) {
           <PatientName>Hola, {user?.name_user || 'Paciente'}</PatientName>
           <PatientRole>Paciente</PatientRole>
         </PatientInfo>
-        <Boton $rojo onClick={onLogout} style={{ padding: '6px 18px', fontSize: '0.8rem', margin: 0 }}>
-          Cerrar sesión
-        </Boton>
+        <AccionesEncabezado>
+          {instalacion.disponible && (
+            <BotonInstalar type="button" onClick={instalacion.alTocar}>
+              <FiDownload aria-hidden /> Instalar app
+            </BotonInstalar>
+          )}
+          <Boton $rojo onClick={onLogout} style={{ padding: '6px 18px', fontSize: '0.8rem', margin: 0 }}>
+            Cerrar sesión
+          </Boton>
+        </AccionesEncabezado>
       </PatientHeader>
 
       <PatientBody>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiMenu, FiX, FiDownload } from "react-icons/fi";
 import { Nav, ScrollLink, SignNavLink, NavMenu, LogoArea, MenuButton, InstallButton } from "../elementos/NavbarElements";
-import { useInstalarApp } from "../pwa/useInstalarApp";
+import { useOfrecerInstalacion } from "../pwa/useInstalarApp";
 
 const SECCIONES = [
     ["inicio", "Inicio"],
@@ -15,7 +15,7 @@ const Navbar = ({ isAuthenticated }) => {
     const navigate = useNavigate();
     // Menú desplegable en pantallas chicas
     const [abierto, setAbierto] = useState(false);
-    const { puedeInstalar, instalar } = useInstalarApp();
+    const instalacion = useOfrecerInstalacion();
 
     // Escape cierra el menú
     useEffect(() => {
@@ -62,8 +62,8 @@ const Navbar = ({ isAuthenticated }) => {
                 <SignNavLink to="/sign-up" onClick={() => setAbierto(false)}>
                     Ingresar
                 </SignNavLink>
-                {puedeInstalar && (
-                    <InstallButton type="button" onClick={() => { setAbierto(false); instalar(); }}>
+                {instalacion.disponible && (
+                    <InstallButton type="button" onClick={() => { setAbierto(false); instalacion.alTocar(); }}>
                         <FiDownload /> Instalar app
                     </InstallButton>
                 )}

@@ -49,3 +49,16 @@ export function estaInstalada() {
 export function esIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
+
+// Abre la invitación a instalar (PromoInstalacion) desde cualquier parte de la app
+export const EVENTO_PROMO = 'armonia:promo-instalacion';
+export const abrirPromoInstalacion = () => window.dispatchEvent(new Event(EVENTO_PROMO));
+
+// Para los botones "Instalar app": si mostrarlos y qué hacer al tocarlos.
+// Con el aviso del navegador se abre directo su diálogo; en iPhone/iPad, la invitación con los pasos.
+export function useOfrecerInstalacion() {
+  const { puedeInstalar, instalar } = useInstalarApp();
+  const disponible = (puedeInstalar || esIOS()) && !estaInstalada();
+  const alTocar = () => (puedeInstalar ? instalar() : abrirPromoInstalacion());
+  return { disponible, alTocar };
+}

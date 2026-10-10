@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { FiWifiOff, FiRefreshCw } from 'react-icons/fi';
+import { FiWifiOff, FiRefreshCw, FiCheckCircle } from 'react-icons/fi';
 import { tablet } from '../estilos/medidas';
 import { useEnLinea } from './useEnLinea';
 
@@ -28,7 +28,7 @@ const Aviso = styled.div`
   gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
-  background: ${props => (props.$tipo === 'error' ? '#1a1a2e' : '#4a0b5a')};
+  background: ${props => ({ error: '#1a1a2e', exito: '#166534' }[props.$tipo] || '#4a0b5a')};
   color: #ffffff;
   font-family: 'Poppins', sans-serif;
   font-size: 0.85rem;
@@ -56,18 +56,48 @@ const Boton = styled.button`
   cursor: pointer;
 `;
 
-// Avisos de la app instalada: sin conexión y versión nueva disponible
+const AVISO_INSTALADA_MS = 7000;
+
+// true por unos segundos justo después de que la app se instala
+function useRecienInstalada() {
+  const [reciente, setReciente] = useState(false);
+
+  useEffect(() => {
+    let temporizador;
+    const alInstalar = () => {
+      setReciente(true);
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => setReciente(false), AVISO_INSTALADA_MS);
+    };
+    window.addEventListener('appinstalled', alInstalar);
+    return () => {
+      window.removeEventListener('appinstalled', alInstalar);
+      clearTimeout(temporizador);
+    };
+  }, []);
+
+  return reciente;
+}
+
+// Avisos de la app: recién instalada, sin conexión y versión nueva disponible
 export default function AvisosPWA() {
   const enLinea = useEnLinea();
+  const recienInstalada = useRecienInstalada();
   const {
     needRefresh: [hayVersionNueva, setHayVersionNueva],
     updateServiceWorker,
   } = useRegisterSW();
 
-  if (enLinea && !hayVersionNueva) return null;
+  if (enLinea && !hayVersionNueva && !recienInstalada) return null;
 
   return (
     <Contenedor>
+      {recienInstalada && (
+        <Aviso role="status" $tipo="exito">
+          <FiCheckCircle aria-hidden />
+          <Texto>¡Listo! Armonía ya está instalada. Buscá su ícono para abrirla.</Texto>
+        </Aviso>
+      )}
       {!enLinea && (
         <Aviso role="status" $tipo="error">
           <FiWifiOff aria-hidden />

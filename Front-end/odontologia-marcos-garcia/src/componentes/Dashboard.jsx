@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   FiHome, FiCalendar, FiUsers, FiFileText,
-  FiPlusCircle, FiClock, FiLogOut, FiCheckCircle
+  FiPlusCircle, FiClock, FiLogOut, FiCheckCircle, FiDownload
 } from 'react-icons/fi';
+import { useOfrecerInstalacion } from '../pwa/useInstalarApp';
 import CalendarioDoctorSemana from './Calendar';
 import AppointmentForm from './AppointmentForm';
 import AppointmentSuccess from './AppointmentSuccess';
@@ -236,7 +237,27 @@ const LogoutBtn = styled.button`
   }
 `;
 
-// En celular el botón de cerrar sesión queda solo con el ícono
+const TopBarRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+`;
+
+// "Instalar app": solo aparece si el navegador permite instalarla y todavía no está instalada
+const InstalarBtn = styled(LogoutBtn)`
+  border-color: #e9d5ff;
+  color: #5c0e6d;
+  font-weight: 600;
+
+  &:hover {
+    background: #faf5ff;
+    border-color: #c084fc;
+    color: #5c0e6d;
+  }
+`;
+
+// En celular los botones de la barra quedan solo con el ícono
 const TextoBoton = styled.span`
   ${movil} {
     display: none;
@@ -713,6 +734,7 @@ function NewAppointmentView({ user }) {
 
 export default function Dashboard({ user, onLogout }) {
   const [activeView, setActiveView] = useState('inicio');
+  const instalacion = useOfrecerInstalacion();
 
   const rol = user?.nombre_rol || '';
   const navItems = getNavItems(rol);
@@ -763,9 +785,16 @@ export default function Dashboard({ user, onLogout }) {
             <Greeting>Hola, {user?.name_user || 'Usuario'}</Greeting>
             <RoleBadge $color={getRoleColor(rol)}>{rol}</RoleBadge>
           </TopBarLeft>
-          <LogoutBtn onClick={onLogout} aria-label="Cerrar sesión">
-            <FiLogOut aria-hidden /> <TextoBoton>Cerrar sesión</TextoBoton>
-          </LogoutBtn>
+          <TopBarRight>
+            {instalacion.disponible && (
+              <InstalarBtn onClick={instalacion.alTocar} aria-label="Instalar app">
+                <FiDownload aria-hidden /> <TextoBoton>Instalar app</TextoBoton>
+              </InstalarBtn>
+            )}
+            <LogoutBtn onClick={onLogout} aria-label="Cerrar sesión">
+              <FiLogOut aria-hidden /> <TextoBoton>Cerrar sesión</TextoBoton>
+            </LogoutBtn>
+          </TopBarRight>
         </TopBar>
         <ContentArea>
           {renderView()}

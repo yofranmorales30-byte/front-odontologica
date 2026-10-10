@@ -53,6 +53,19 @@ test('"Instalar app" aparece solo cuando el navegador ofrece instalar la PWA', a
   expect(screen.queryByRole('button', { name: /Instalar app/ })).toBeNull(); // el aviso sirve una vez
 });
 
+test('en iPhone "Instalar app" también aparece y abre la invitación con los pasos', () => {
+  Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)', configurable: true });
+  const alPedir = vi.fn();
+  window.addEventListener('armonia:promo-instalacion', alPedir);
+
+  renderNavbar();
+  fireEvent.click(screen.getByRole('button', { name: /Instalar app/ }));
+  expect(alPedir).toHaveBeenCalled();
+
+  window.removeEventListener('armonia:promo-instalacion', alPedir);
+  delete navigator.userAgent;
+});
+
 test('con la sesión iniciada la barra no se muestra', () => {
   const { container } = render(<MemoryRouter><Navbar isAuthenticated /></MemoryRouter>);
   expect(container.innerHTML).toBe('');
