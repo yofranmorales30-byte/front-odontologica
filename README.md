@@ -131,6 +131,33 @@ La primera vez que una cuenta entra a su panel aparece un tutorial guiado, como 
 - **Cambiar los textos:** están todos en `src/tutorial/pasos.js`. Los pasos del personal salen del menú del panel: un módulo nuevo en el menú necesita su explicación en `MODULOS`.
 - **Qué se ilumina:** el elemento marcado con `data-tutorial="..."`; el `objetivo` de cada paso es esa marca. Si el elemento no está en pantalla, la tarjeta va al centro.
 
+## Buscadores y descargas (Excel y PDF)
+
+Las tablas del panel del personal tienen buscador, y los listados se descargan en Excel y en PDF.
+
+- **Buscador** (Pacientes y Citas): filtra mientras se escribe, sin distinguir mayúsculas ni acentos. Con varias palabras tienen que estar todas. Un teléfono se encuentra aunque se escriba con guiones, y una fecha como `12/10/2026`, `2026-10-12` o `12 oct 2026`. El sexo y el estado se encuentran por su comienzo ("pend" → Pendiente), para que buscar el apellido "Niño" no traiga a todas las pacientes de sexo "Femenino".
+- **Qué se descarga:**
+  - *Pacientes:* nombre, sexo, fecha de nacimiento, teléfono y dirección.
+  - *Citas:* fecha, horario, paciente, teléfono, motivo y estado.
+  - *Agenda* (en el Calendario): los turnos de la semana o el día que se está viendo; en el PDF, día por día.
+- **Con una búsqueda puesta se descarga solo lo encontrado**, y el PDF lo aclara en su encabezado.
+- **Quién puede:** quien ve cada pantalla. El doctor descarga pacientes y agenda; administrador y asistente, además, las citas.
+- **Sin librerías:** los archivos se arman en el navegador (`src/exportar/`), no pasan por el servidor. En el Excel el teléfono va como texto (no pierde el 0 de adelante) y las fechas como fechas, que se pueden ordenar y filtrar.
+- **Sumar otro listado:** `xlsx({ hoja, columnas, filas })` y `pdfTabla({ titulo, detalle, columnas, filas })` sirven para cualquier tabla; `pacientes.js` y `citas.js` muestran cómo usarlos.
+- Los archivos llevan datos personales de pacientes: quedan en el dispositivo de quien los descarga.
+
+## Historial de cada paciente
+
+Al tocar un paciente en la tabla de Pacientes se abre su historial: la ficha (edad, teléfono con acceso a WhatsApp, email y dirección) y todas sus citas, en tres partes.
+
+- **Procedimientos realizados:** las citas completadas, de la más reciente a la más antigua, con el motivo, el día, el horario y quién atendió.
+- **Próximos turnos** y **turnos cancelados**, si los tiene.
+- **También desde el calendario:** el detalle de un turno tiene el botón "Ver historial del paciente".
+- **Se descarga** en Excel y en PDF, como los demás listados.
+- **De dónde sale:** de las citas, con `GET /api/pacientes/:id/historial` (solo el personal). Incluye las citas que se ocultaron de la agenda: ocultar una cita la saca del calendario, no de la historia del paciente.
+- **Qué cuenta como realizado:** una cita queda completada cuando pasa su horario y no fue cancelada. Si el paciente no vino, hay que cancelarla antes para que no figure como procedimiento hecho.
+- **Lo que no tiene todavía:** notas clínicas de cada visita (lo que se hizo, observaciones). El procedimiento es el motivo con el que se agendó el turno.
+
 ## Tests
 
 ```bash
