@@ -121,6 +121,16 @@ El frontend se puede instalar en el celular o la computadora como una app, con e
 - **Probarla:** el service worker no se activa con `npm run dev`. Usar `npm run build && npm run preview`. En producción tiene que servirse por **HTTPS** (los navegadores solo permiten service workers en HTTPS o en `localhost`).
 - **Íconos:** salen de `public/favicon.svg`. Si cambia el logo, se regeneran con `npx @vite-pwa/assets-generator@1 --preset minimal-2023 public/favicon.svg` (produce los mismos nombres de archivo que usa `vite.config.js`).
 
+## Tutorial de cada panel
+
+La primera vez que una cuenta entra a su panel aparece un tutorial guiado, como los de los juegos: la pantalla se oscurece y queda en pausa, se ilumina una parte por vez y una tarjeta explica para qué sirve. Se avanza con "Continuar" y se puede saltear con la X.
+
+- **Uno por rol:** el del personal explica los módulos que ese rol tiene en el menú (el doctor no ve "Citas" ni "Agendar turno", y no se le dice que puede mover turnos); el del paciente explica cómo sacar un turno, sus citas y los estados.
+- **Volver a verlo:** con el botón "Tutorial" del panel.
+- **Cuándo aparece solo:** una vez por cuenta y por navegador (se recuerda en el dispositivo, no en el servidor: en otro celular o computadora aparece una vez más). La invitación a instalar la app espera a que termine.
+- **Cambiar los textos:** están todos en `src/tutorial/pasos.js`. Los pasos del personal salen del menú del panel: un módulo nuevo en el menú necesita su explicación en `MODULOS`.
+- **Qué se ilumina:** el elemento marcado con `data-tutorial="..."`; el `objetivo` de cada paso es esa marca. Si el elemento no está en pantalla, la tarjeta va al centro.
+
 ## Tests
 
 ```bash
