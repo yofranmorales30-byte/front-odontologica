@@ -28,6 +28,39 @@ exports.getPacienteById = async (req, res) => {
   }
 };
 
+// Historial de un paciente: su ficha y todas sus citas, de la más reciente a la más antigua.
+// Incluye las que se ocultaron de la agenda: ocultar una cita no la borra de la historia del paciente.
+exports.getHistorial = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Columnas explícitas: de la cuenta del paciente solo sale el email
+    const paciente = await db.query(
+      `SELECT p.id_paciente, p.name_paciente, p.genre_paciente, p.birth_paciente, p.dir_paciente, p.telf_paciente,
+              u.email_user
+       FROM paciente p
+       LEFT JOIN user u ON p.fk_user = u.id_user
+       WHERE p.id_paciente = $1`,
+      [id]
+    );
+    if (paciente.rows.length === 0) {
+      return res.status(404).json({ error: 'Paciente no encontrado' });
+    }
+
+    const citas = await db.query(
+      `SELECT c.id_citas, c.date_cita, c.time_cita, c.desc_cita, c.status_cita, c.logic_cita,
+              d.name_user AS name_doctor
+       FROM citas c
+       LEFT JOIN user d ON c.fk_doctor = d.id_user
+       WHERE c.fk_paciente = $1
+       ORDER BY c.date_cita DESC, c.id_citas DESC`,
+      [id]
+    );
+    res.json({ paciente: paciente.rows[0], citas: citas.rows });
+  } catch (err) {
+    errorInterno(res, err);
+  }
+};
+
 // Crear un paciente nuevo
 exports.createPaciente = async (req, res) => {
   const { fk_user, name_paciente, genre_paciente, birth_paciente, dir_paciente, telf_paciente, logic_paciente } = req.body;

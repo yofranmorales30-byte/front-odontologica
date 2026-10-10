@@ -53,6 +53,7 @@ router.delete('/users/:id', admin, userController.deleteUser);
 //ruta para los pacientes
 router.get('/pacientes', staff, pacienteController.getPacientes);
 router.get('/pacientes/:id', staff, pacienteController.getPacienteById);
+router.get('/pacientes/:id/historial', staff, citasAlDia, pacienteController.getHistorial);
 router.post('/pacientes', gestion, pacienteController.createPaciente);
 router.put('/pacientes/:id', gestion, pacienteController.updatePaciente);
 router.delete('/pacientes/:id', admin, pacienteController.deletePaciente);
