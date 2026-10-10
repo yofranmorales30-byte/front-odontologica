@@ -11,7 +11,7 @@ import { useOfrecerInstalacion } from '../pwa/useInstalarApp';
 import { apiFetch } from '../api';
 import { movil } from '../estilos/medidas';
 import EtiquetaEstado from './EtiquetaEstado';
-import { fechaHoraCita } from '../utils/formato';
+import { diaCita, horarioCita } from '../utils/formato';
 
 // El panel del personal trae FullCalendar (la mayor parte del bundle): se descarga solo si hace falta
 const Dashboard = lazy(() => import('./Dashboard'));
@@ -231,6 +231,21 @@ const CitaFecha = styled.div`
   color: #1a1a2e;
 `;
 
+// El horario nunca se parte en dos: en el celular baja entero al renglón siguiente
+const Horario = styled.span`
+  white-space: nowrap;
+
+  ${movil} {
+    display: block;
+  }
+`;
+
+const Separador = styled.span`
+  ${movil} {
+    display: none;
+  }
+`;
+
 const CitaDesc = styled.div`
   font-family: 'Poppins', sans-serif;
   font-size: 0.82rem;
@@ -387,7 +402,15 @@ function PatientDashboard({ user, onLogout }) {
         {!loading && citas.map((c, i) => (
           <CitaCard key={c.id_citas || i}>
             <CitaInfo>
-              <CitaFecha>{fechaHoraCita(c.date_cita, c.time_cita)}</CitaFecha>
+              <CitaFecha>
+                {diaCita(c.date_cita)}
+                {c.date_cita && (
+                  <>
+                    <Separador aria-hidden> · </Separador>
+                    <Horario>{horarioCita(c.date_cita, c.time_cita)}</Horario>
+                  </>
+                )}
+              </CitaFecha>
               <CitaDesc>{c.desc_cita || 'Sin descripción'}</CitaDesc>
             </CitaInfo>
             <EtiquetaEstado estado={c.status_cita || 'PENDIENTE'} />

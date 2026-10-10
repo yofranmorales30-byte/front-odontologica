@@ -57,7 +57,9 @@ test('el paciente ve el día y la hora de sus citas', async () => {
 
   render(<App />);
 
-  expect(await screen.findByText('mar, 12 mar 2030 · 16:00–18:00 hs')).toBeTruthy();
+  // El horario va en su propio elemento para que nunca se parta en dos renglones
+  const horario = await screen.findByText('16:00–18:00 hs');
+  expect(horario.parentElement.textContent).toBe('mar, 12 mar 2030 · 16:00–18:00 hs');
 });
 
 test('una ruta que no existe vuelve al inicio (en vez de una página vacía)', async () => {
