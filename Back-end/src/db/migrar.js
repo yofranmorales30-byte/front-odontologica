@@ -4,12 +4,11 @@
 require('dotenv').config();
 const { prepararBase } = require('./db');
 
+// Sin process.exit(): el proceso termina solo cuando se cierran las conexiones. Forzar la
+// salida justo después de hablar con Turso puede hacer fallar a Node en Windows.
 prepararBase()
-  .then(() => {
-    console.log('✅ Base de datos lista');
-    process.exit(0);
-  })
+  .then(() => console.log('✅ Base de datos lista'))
   .catch((err) => {
     console.error('❌ No se pudo preparar la base de datos:', err.message);
-    process.exit(1);
+    process.exitCode = 1;
   });

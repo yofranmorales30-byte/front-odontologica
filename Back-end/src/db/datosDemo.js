@@ -151,13 +151,13 @@ if (require.main === module) {
     console.error('Uso: npm run demo:cargar | npm run demo:borrar');
     process.exit(1);
   }
-  accion()
-    .then(() => process.exit(0))
-    .catch((err) => {
-      const sinTablas = /no such table/i.test(err.message);
-      console.error(`❌ ${sinTablas ? 'La base no está preparada: corré primero npm run migrar.' : err.message}`);
-      process.exit(1);
-    });
+  // Sin process.exit(): el proceso termina solo cuando se cierran las conexiones. Forzar la
+  // salida justo después de hablar con Turso puede hacer fallar a Node en Windows.
+  accion().catch((err) => {
+    const sinTablas = /no such table/i.test(err.message);
+    console.error(`❌ ${sinTablas ? 'La base no está preparada: corré primero npm run migrar.' : err.message}`);
+    process.exitCode = 1;
+  });
 }
 
 module.exports = { cargar, borrar };
