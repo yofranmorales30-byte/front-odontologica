@@ -56,6 +56,23 @@ La base vive en [Turso](https://turso.tech) (libSQL, un SQLite en la nube). Prep
 - **Escrituras atómicas:** lo que tiene que guardarse junto (cuenta + ficha + cita) va en un único `batch`: si una parte falla, no queda nada. No se usan transacciones interactivas, porque contra Turso bloquearían la base durante varios viajes de red.
 - **Sin Turso:** sin `TURSO_DATABASE_URL` se usa un archivo SQLite local. Los tests usan siempre un archivo temporal propio, nunca la base de Turso.
 
+## Datos de demostración
+
+Para probar el sistema con una agenda llena, sin cargar todo a mano:
+
+```bash
+cd Back-end
+npm run demo:cargar   # agrega unos 70 pacientes y 180 citas ficticios a la base del .env
+npm run demo:borrar   # los quita
+```
+
+- **Qué carga:** pacientes de todas las edades, con y sin cuenta propia, y sus tratamientos en orden (evaluación → brackets → controles, prótesis por etapas, etc.): seis semanas de historia y cuatro de agenda futura, dentro del horario de atención y sin pisar lo que ya esté reservado. Las fechas se calculan desde el día en que se corre.
+- **No toca lo que ya hay:** no modifica ninguna cuenta existente ni su contraseña. La cuenta `paciente@odontologia.com` recibe algunas citas para poder probar "Mis citas".
+- **Datos que no son de nadie:** los teléfonos usan el patrón ficticio `555-01xx` y los emails son `@example.com`, para que una prueba con los botones de WhatsApp o email no le llegue a una persona real.
+- **Cuentas nuevas:** los pacientes con cuenta comparten una contraseña aleatoria que se muestra una sola vez al cargar.
+- **Borrar es exacto:** lo creado queda anotado en la tabla `datos_demo`, así que `demo:borrar` quita eso y nada más. También borra las citas que se hayan agendado después para un paciente de demostración.
+- **Antes de usar el sistema en serio:** correr `npm run demo:borrar`.
+
 ## Desplegar la API en Vercel
 
 `src/server.js` exporta la app de Express: Vercel la detecta sola y la corre como función. En Vercel no escucha un puerto ni prepara la base (haría más lento cada arranque en frío).
@@ -97,7 +114,8 @@ Qué tiene en cuenta `vercel.json`:
 El frontend se puede instalar en el celular o la computadora como una app, con el ícono de Armonía.
 
 - **Instalar:** en Android, Chrome o Edge aparece "Instalar app" en el menú de la página (o en la barra del navegador). En iPhone: Compartir → "Agregar a inicio".
-- **Invitación en el celular:** en la página de inicio, a los 4 segundos, un panel invita a instalarla (en iPhone explica los pasos). No aparece en la computadora, en los formularios ni con la app ya instalada, y si la persona elige "Ahora no" no vuelve por 14 días (`src/pwa/PromoInstalacion.jsx`).
+- **Invitación a instalarla** (`src/pwa/PromoInstalacion.jsx`): un modal con los beneficios y el botón "Instalar app" (en iPhone, los dos pasos). En el celular sube desde abajo; en la computadora va centrado. Aparece sola en la página de inicio (a los 4 segundos en el celular, a los 7 en la computadora) y al entrar al panel (a los 1,5 segundos). No aparece si el navegador no permite instalar, si la app ya está instalada ni mientras la persona está escribiendo en un formulario. Con "Ahora no" no vuelve por 14 días.
+- **Botón "Instalar app":** está en el menú de la página, en el panel del paciente y en la barra del panel del personal. Abre la instalación aunque la invitación esté pospuesta, y al terminar se muestra un aviso de confirmación.
 - **Sin conexión:** la app abre igual (página, login y formularios quedan guardados), pero los turnos y los datos de pacientes **nunca se guardan en el dispositivo**: siempre se piden al servidor. Sin internet se muestra un aviso.
 - **Actualizaciones:** cuando se publica una versión nueva, la app avisa y el usuario elige cuándo actualizar, para no perder un formulario a medio completar.
 - **Probarla:** el service worker no se activa con `npm run dev`. Usar `npm run build && npm run preview`. En producción tiene que servirse por **HTTPS** (los navegadores solo permiten service workers en HTTPS o en `localhost`).
