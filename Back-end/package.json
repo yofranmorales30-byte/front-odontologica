@@ -7,6 +7,8 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "migrar": "node src/db/migrar.js",
+    "demo:cargar": "node src/db/datosDemo.js cargar",
+    "demo:borrar": "node src/db/datosDemo.js borrar",
     "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [],
