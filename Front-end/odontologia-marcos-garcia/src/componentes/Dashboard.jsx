@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   FiHome, FiCalendar, FiUsers, FiFileText,
-  FiPlusCircle, FiClock, FiLogOut, FiCheckCircle, FiDownload
+  FiPlusCircle, FiClock, FiLogOut, FiCheckCircle, FiDownload, FiHelpCircle
 } from 'react-icons/fi';
 import { useOfrecerInstalacion } from '../pwa/useInstalarApp';
+import Tutorial from '../tutorial/Tutorial';
+import { pasosPersonal } from '../tutorial/pasos';
+import { useTutorial } from '../tutorial/useTutorial';
 import CalendarioDoctorSemana from './Calendar';
 import AppointmentForm from './AppointmentForm';
 import AppointmentSuccess from './AppointmentSuccess';
@@ -257,9 +260,30 @@ const InstalarBtn = styled(LogoutBtn)`
   }
 `;
 
+// "Tutorial": vuelve a mostrar el recorrido guiado del panel
+const TutorialBtn = styled(LogoutBtn)`
+  &:hover {
+    background: #faf5ff;
+    border-color: #c084fc;
+    color: #5c0e6d;
+  }
+
+  ${tablet} {
+    padding: 10px;
+    font-size: 1rem;
+  }
+`;
+
 // En celular los botones de la barra quedan solo con el ícono
 const TextoBoton = styled.span`
   ${movil} {
+    display: none;
+  }
+`;
+
+// El de "Tutorial" se achica antes, para dejarle lugar al saludo
+const TextoTutorial = styled.span`
+  ${tablet} {
     display: none;
   }
 `;
@@ -735,12 +759,21 @@ function NewAppointmentView({ user }) {
 export default function Dashboard({ user, onLogout }) {
   const [activeView, setActiveView] = useState('inicio');
   const instalacion = useOfrecerInstalacion();
+  const tutorial = useTutorial(user);
+  // El módulo que el tutorial está explicando (null: el que la persona tenía abierto)
+  const [vistaTutorial, setVistaTutorial] = useState(null);
 
   const rol = user?.nombre_rol || '';
   const navItems = getNavItems(rol);
+  const vistaVisible = (tutorial.abierto && vistaTutorial) || activeView;
 
-  const renderView = () => {
-    switch (activeView) {
+  const cerrarTutorial = () => {
+    setVistaTutorial(null);
+    tutorial.cerrar();
+  };
+
+  const renderView = (vista) => {
+    switch (vista) {
       case 'inicio':
         return <InicioView />;
       case 'calendario':
@@ -766,9 +799,10 @@ export default function Dashboard({ user, onLogout }) {
             return (
               <NavItem
                 key={item.key}
-                $active={activeView === item.key}
-                aria-current={activeView === item.key ? 'page' : undefined}
+                $active={vistaVisible === item.key}
+                aria-current={vistaVisible === item.key ? 'page' : undefined}
                 aria-label={item.label}
+                data-tutorial={`menu menu-${item.key}`}
                 onClick={() => setActiveView(item.key)}
               >
                 <NavIcon aria-hidden><Icon /></NavIcon>
@@ -786,20 +820,34 @@ export default function Dashboard({ user, onLogout }) {
             <RoleBadge $color={getRoleColor(rol)}>{rol}</RoleBadge>
           </TopBarLeft>
           <TopBarRight>
+            <TutorialBtn onClick={tutorial.abrir} aria-label="Ver tutorial" data-tutorial="tutorial">
+              <FiHelpCircle aria-hidden /> <TextoTutorial>Tutorial</TextoTutorial>
+            </TutorialBtn>
             {instalacion.disponible && (
-              <InstalarBtn onClick={instalacion.alTocar} aria-label="Instalar app">
+              <InstalarBtn onClick={instalacion.alTocar} aria-label="Instalar app" data-tutorial="instalar">
                 <FiDownload aria-hidden /> <TextoBoton>Instalar app</TextoBoton>
               </InstalarBtn>
             )}
-            <LogoutBtn onClick={onLogout} aria-label="Cerrar sesión">
+            <LogoutBtn onClick={onLogout} aria-label="Cerrar sesión" data-tutorial="salir">
               <FiLogOut aria-hidden /> <TextoBoton>Cerrar sesión</TextoBoton>
             </LogoutBtn>
           </TopBarRight>
         </TopBar>
         <ContentArea>
-          {renderView()}
+          {/* Lo que la persona tenía abierto sigue montado mientras el tutorial muestra otro módulo:
+              así no se pierde, por ejemplo, un turno a medio cargar */}
+          <div hidden={vistaVisible !== activeView}>{renderView(activeView)}</div>
+          {vistaVisible !== activeView && renderView(vistaVisible)}
         </ContentArea>
       </MainArea>
+
+      {tutorial.abierto && (
+        <Tutorial
+          pasos={pasosPersonal({ rol, nombre: user?.name_user, menu: navItems, conInstalar: instalacion.disponible })}
+          alPaso={(paso) => setVistaTutorial(paso.vista || null)}
+          alCerrar={cerrarTutorial}
+        />
+      )}
     </DashboardContainer>
   );
 }

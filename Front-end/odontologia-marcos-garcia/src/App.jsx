@@ -11,9 +11,11 @@ import LandingPage from "./componentes/LandingPage";
 import SignUp from "./componentes/SignUp";
 import AvisosPWA from "./pwa/AvisosPWA";
 import PromoInstalacion from "./pwa/PromoInstalacion";
+import { useTutorialEnCurso } from "./tutorial/useTutorial";
 
 export default function App() {
     const [user, setUser] = useState(null);
+    const tutorialEnCurso = useTutorialEnCurso(user);
     // Mientras se valida un token guardado no se muestra nada, para que no parpadee el login
     const [restaurando, setRestaurando] = useState(() => !!getStoredToken());
     const isAuthenticated = !!user;
@@ -70,7 +72,11 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <AvisosPWA />
-            <PromoInstalacion sesion={!user ? null : user.nombre_rol === 'Paciente' ? 'paciente' : 'personal'} />
+            {/* En el panel, la invitación a instalar espera a que termine el tutorial */}
+            <PromoInstalacion
+                sesion={!user ? null : user.nombre_rol === 'Paciente' ? 'paciente' : 'personal'}
+                tutorialEnCurso={tutorialEnCurso}
+            />
         </Router>
     );
 }

@@ -1,7 +1,8 @@
-import { test, expect, beforeEach } from 'vitest';
+import { test, expect, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import App from './App';
+import { pasosPaciente } from './tutorial/pasos';
 
 const ADMIN = {
   token: 'token-nuevo', id_user: 1, name_user: 'Admin Marcos', email_user: 'admin@odontologia.com',
@@ -22,8 +23,27 @@ function mockApi(respuestas) {
 
 beforeEach(() => {
   sessionStorage.clear();
+  localStorage.clear();
   window.history.pushState({}, '', '/sign-up');
 });
+
+// El aviso de instalación del navegador es compartido: se descarta entre tests
+afterEach(() => act(() => { window.dispatchEvent(new Event('appinstalled')); }));
+
+const PACIENTE = { token: 't', id_user: 5, name_user: 'Ana Pérez', fk_rol: 4, nombre_rol: 'Paciente', id_paciente: 3 };
+const CITA = { id_citas: 9, date_cita: '2030-03-12T16:00:00', time_cita: '2', desc_cita: 'Limpieza', status_cita: 'PENDIENTE' };
+
+// Entra al panel del paciente y espera a que aparezca el horario de su cita
+// (con la máquina cargada tarda más que el segundo que se espera por defecto)
+function entrarComoPaciente() {
+  sessionStorage.setItem('armonia.token', 'token-paciente');
+  mockApi({ '/me': [200, PACIENTE], '/mis-citas': [200, [CITA]] });
+  render(<App />);
+  return screen.findByText('16:00–18:00 hs', {}, { timeout: 5000 });
+}
+
+const tituloTutorial = () => screen.getByRole('dialog').querySelector('h2').textContent;
+const continuar = () => fireEvent.click(screen.getByRole('button', { name: /^(Empezar|Continuar|Entendido)$/ }));
 
 test('al recargar con un token guardado recupera la sesión', async () => {
   sessionStorage.setItem('armonia.token', 'token-guardado');
@@ -49,18 +69,47 @@ test('si el servidor rechaza el token guardado, se borra y se muestra el login',
 });
 
 test('el paciente ve el día y la hora de sus citas', async () => {
-  sessionStorage.setItem('armonia.token', 'token-paciente');
-  mockApi({
-    '/me': [200, { token: 't', id_user: 5, name_user: 'Ana Pérez', fk_rol: 4, nombre_rol: 'Paciente', id_paciente: 3 }],
-    '/mis-citas': [200, [{ id_citas: 9, date_cita: '2030-03-12T16:00:00', time_cita: '2', desc_cita: 'Limpieza', status_cita: 'PENDIENTE' }]],
-  });
-
-  render(<App />);
-
   // El horario va en su propio elemento para que nunca se parta en dos renglones
-  const horario = await screen.findByText('16:00–18:00 hs');
+  const horario = await entrarComoPaciente();
   expect(horario.parentElement.textContent).toBe('mar, 12 mar 2030 · 16:00–18:00 hs');
-});
+}, 10000);
+
+test('paciente: la primera vez el tutorial le explica su panel, y después queda en el botón "Tutorial"', async () => {
+  await entrarComoPaciente();
+
+  const titulos = [];
+  for (let i = 0; i < 6; i++) {
+    titulos.push(tituloTutorial());
+    continuar();
+  }
+  expect(titulos).toEqual([
+    'Te damos la bienvenida, Ana Pérez', 'Sacá un turno', 'Tus citas', 'El estado de cada turno', 'Cerrar sesión', 'Eso es todo',
+  ]);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(localStorage.getItem('armonia.tutorial.5')).not.toBeNull();
+
+  // Todo lo que el tutorial ilumina está en el panel
+  const enPantalla = [...document.querySelectorAll('[data-tutorial]')].map((el) => el.dataset.tutorial);
+  for (const { objetivo } of pasosPaciente({})) {
+    if (objetivo) expect(enPantalla).toContain(objetivo);
+  }
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ver tutorial' }));
+  expect(tituloTutorial()).toBe('Te damos la bienvenida, Ana Pérez');
+}, 15000);
+
+test('la invitación a instalar espera a que termine el tutorial', async () => {
+  act(() => { window.dispatchEvent(Object.assign(new Event('beforeinstallprompt'), { prompt() {} })); });
+  await entrarComoPaciente();
+
+  // La invitación aparece al segundo y medio de entrar al panel: con el tutorial abierto, no
+  await new Promise((listo) => setTimeout(listo, 1700));
+  expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  expect(tituloTutorial()).toBe('Te damos la bienvenida, Ana Pérez');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Saltar tutorial' }));
+  expect(await screen.findByRole('dialog', { name: 'Instalá Armonía en tu computadora' }, { timeout: 5000 })).toBeTruthy();
+}, 20000);
 
 test('una ruta que no existe vuelve al inicio (en vez de una página vacía)', async () => {
   mockApi({});

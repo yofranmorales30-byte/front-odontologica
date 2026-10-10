@@ -125,6 +125,25 @@ test('al entrar al panel invita enseguida, con el texto de cada tipo de usuario'
   expect(promo().textContent).toMatch(/La agenda, a mano/);
 });
 
+test('en el panel espera a que termine el tutorial; en el inicio no hay tutorial que esperar', () => {
+  navegadorOfreceInstalar();
+  const panel = (tutorialEnCurso) => (
+    <MemoryRouter initialEntries={['/sign-up']}><PromoInstalacion sesion="paciente" tutorialEnCurso={tutorialEnCurso} /></MemoryRouter>
+  );
+  const { rerender, unmount } = render(panel(true));
+  pasar(4000);
+  expect(promo()).toBeNull();
+
+  rerender(panel(false));
+  pasar(1500);
+  expect(promo()).not.toBeNull();
+  unmount();
+
+  render(<MemoryRouter initialEntries={['/']}><PromoInstalacion sesion="paciente" tutorialEnCurso /></MemoryRouter>);
+  pasar(4000);
+  expect(promo()).not.toBeNull();
+});
+
 test('no interrumpe a quien está completando un formulario', () => {
   navegadorOfreceInstalar();
   const campo = document.body.appendChild(document.createElement('input'));

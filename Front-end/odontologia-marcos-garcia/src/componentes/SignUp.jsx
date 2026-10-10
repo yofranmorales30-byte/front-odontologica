@@ -6,8 +6,11 @@ import AppointmentForm from './AppointmentForm';
 import AppointmentSuccess from './AppointmentSuccess';
 import BackgroundSlider from './BackgroundSlider';
 import Boton from '../elementos/boton.js';
-import { FiUserPlus, FiLogIn, FiClipboard, FiDownload } from 'react-icons/fi';
+import { FiUserPlus, FiLogIn, FiClipboard, FiDownload, FiHelpCircle } from 'react-icons/fi';
 import { useOfrecerInstalacion } from '../pwa/useInstalarApp';
+import Tutorial from '../tutorial/Tutorial';
+import { pasosPaciente } from '../tutorial/pasos';
+import { useTutorial } from '../tutorial/useTutorial';
 import { apiFetch } from '../api';
 import { movil } from '../estilos/medidas';
 import EtiquetaEstado from './EtiquetaEstado';
@@ -174,6 +177,20 @@ const BotonInstalar = styled.button`
   }
 `;
 
+// "Tutorial": vuelve a mostrar el recorrido guiado. En el celular queda solo el ícono.
+const BotonTutorial = styled(BotonInstalar)`
+  ${movil} {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+    font-size: 1rem;
+
+    span {
+      display: none;
+    }
+  }
+`;
+
 const PatientBody = styled.div`
   padding: 28px 36px 36px;
 
@@ -308,6 +325,7 @@ function PatientDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const instalacion = useOfrecerInstalacion();
+  const tutorial = useTutorial(user);
 
   // Volver a la lista: el "cargando" se prende acá, no dentro del efecto
   const verCitas = () => {
@@ -371,52 +389,64 @@ function PatientDashboard({ user, onLogout }) {
           <PatientRole>Paciente</PatientRole>
         </PatientInfo>
         <AccionesEncabezado>
+          <BotonTutorial type="button" onClick={tutorial.abrir} aria-label="Ver tutorial" data-tutorial="tutorial">
+            <FiHelpCircle aria-hidden /> <span>Tutorial</span>
+          </BotonTutorial>
           {instalacion.disponible && (
-            <BotonInstalar type="button" onClick={instalacion.alTocar}>
+            <BotonInstalar type="button" onClick={instalacion.alTocar} data-tutorial="instalar">
               <FiDownload aria-hidden /> Instalar app
             </BotonInstalar>
           )}
-          <Boton $rojo onClick={onLogout} style={{ padding: '6px 18px', fontSize: '0.8rem', margin: 0 }}>
+          <Boton $rojo onClick={onLogout} data-tutorial="salir" style={{ padding: '6px 18px', fontSize: '0.8rem', margin: 0 }}>
             Cerrar sesión
           </Boton>
         </AccionesEncabezado>
       </PatientHeader>
 
       <PatientBody>
-        <NewAppointmentBtn onClick={() => setView('nuevo-turno')}>
+        <NewAppointmentBtn onClick={() => setView('nuevo-turno')} data-tutorial="agendar">
           + Agendar nuevo turno
         </NewAppointmentBtn>
 
-        <SectionTitle><FiClipboard aria-hidden /> Mis citas</SectionTitle>
+        <section data-tutorial="mis-citas">
+          <SectionTitle><FiClipboard aria-hidden /> Mis citas</SectionTitle>
 
-        {loading && <LoadingState>Cargando tus citas...</LoadingState>}
-        {error && <ErrorState>Error: {error}</ErrorState>}
+          {loading && <LoadingState>Cargando tus citas...</LoadingState>}
+          {error && <ErrorState>Error: {error}</ErrorState>}
 
-        {!loading && !error && citas.length === 0 && (
-          <EmptyState>
-            No tenés citas agendadas todavía.<br />
-            Hacé clic en "Agendar nuevo turno" para sacar tu primer turno.
-          </EmptyState>
-        )}
+          {!loading && !error && citas.length === 0 && (
+            <EmptyState>
+              No tenés citas agendadas todavía.<br />
+              Hacé clic en "Agendar nuevo turno" para sacar tu primer turno.
+            </EmptyState>
+          )}
 
-        {!loading && citas.map((c, i) => (
-          <CitaCard key={c.id_citas || i}>
-            <CitaInfo>
-              <CitaFecha>
-                {diaCita(c.date_cita)}
-                {c.date_cita && (
-                  <>
-                    <Separador aria-hidden> · </Separador>
-                    <Horario>{horarioCita(c.date_cita, c.time_cita)}</Horario>
-                  </>
-                )}
-              </CitaFecha>
-              <CitaDesc>{c.desc_cita || 'Sin descripción'}</CitaDesc>
-            </CitaInfo>
-            <EtiquetaEstado estado={c.status_cita || 'PENDIENTE'} />
-          </CitaCard>
-        ))}
+          {!loading && citas.map((c, i) => (
+            <CitaCard key={c.id_citas || i}>
+              <CitaInfo>
+                <CitaFecha>
+                  {diaCita(c.date_cita)}
+                  {c.date_cita && (
+                    <>
+                      <Separador aria-hidden> · </Separador>
+                      <Horario>{horarioCita(c.date_cita, c.time_cita)}</Horario>
+                    </>
+                  )}
+                </CitaFecha>
+                <CitaDesc>{c.desc_cita || 'Sin descripción'}</CitaDesc>
+              </CitaInfo>
+              <EtiquetaEstado estado={c.status_cita || 'PENDIENTE'} />
+            </CitaCard>
+          ))}
+        </section>
       </PatientBody>
+
+      {tutorial.abierto && (
+        <Tutorial
+          pasos={pasosPaciente({ nombre: user?.name_user, conInstalar: instalacion.disponible })}
+          alCerrar={tutorial.cerrar}
+        />
+      )}
     </PatientDashboardWrapper>
   );
 }

@@ -299,7 +299,8 @@ const Nota = styled.p`
 // Invitación a instalar la app. Con el aviso del navegador (Android, Chrome, Edge) abre su diálogo
 // de instalación; en iPhone/iPad explica cómo agregarla a la pantalla de inicio.
 // `sesion`: null (sin sesión), 'paciente' o 'personal'.
-export default function PromoInstalacion({ sesion = null }) {
+// `tutorialEnCurso`: el panel está mostrando (o por mostrar) su tutorial; la invitación espera a que termine.
+export default function PromoInstalacion({ sesion = null, tutorialEnCurso = false }) {
   const { pathname } = useLocation();
   const { puedeInstalar, instalar } = useInstalarApp();
   const pantallaChica = useMediaQuery(`(max-width: ${ANCHO_MOVIL}px)`);
@@ -313,7 +314,7 @@ export default function PromoInstalacion({ sesion = null }) {
   const ios = !puedeInstalar && esIOS();
   const instalable = (puedeInstalar || ios) && !estaInstalada();
   const lugar = sesion && pathname === RUTA_PANEL ? 'panel' : RUTAS_INICIO.includes(pathname) ? 'inicio' : null;
-  const invitar = instalable && !descartada && !!lugar;
+  const invitar = instalable && !descartada && !!lugar && !(tutorialEnCurso && lugar === 'panel');
   const visible = instalable && (pedida || (invitar && abiertaEn === lugar));
 
   useEffect(() => {
