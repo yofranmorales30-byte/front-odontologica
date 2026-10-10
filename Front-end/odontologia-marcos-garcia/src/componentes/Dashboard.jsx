@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   FiHome, FiCalendar, FiUsers, FiFileText,
-  FiPlusCircle, FiClock, FiLogOut, FiCheckCircle, FiDownload, FiHelpCircle
+  FiPlusCircle, FiClock, FiLogOut, FiCheckCircle, FiDownload, FiHelpCircle, FiChevronRight
 } from 'react-icons/fi';
 import { useOfrecerInstalacion } from '../pwa/useInstalarApp';
+import Buscador from './Buscador';
+import BotonesExportar from './BotonesExportar';
+import HistorialPaciente from './HistorialPaciente';
+import { filtrar } from '../utils/buscar';
+import { exportarPacientesExcel, exportarPacientesPdf } from '../exportar/pacientes';
+import { exportarCitasExcel, exportarCitasPdf, turnoDeCita } from '../exportar/citas';
 import Tutorial from '../tutorial/Tutorial';
 import { pasosPersonal } from '../tutorial/pasos';
 import { useTutorial } from '../tutorial/useTutorial';
@@ -465,6 +471,8 @@ const Td = styled.td`
 `;
 
 const Tr = styled.tr`
+  cursor: ${props => (props.$clic ? 'pointer' : 'auto')};
+
   &:last-child td {
     border-bottom: none;
   }
@@ -490,6 +498,78 @@ const ViewTitle = styled.h2`
   ${movil} {
     font-size: 1.15rem;
     margin-bottom: 16px;
+  }
+`;
+
+// El título de la vista y, a su derecha, sus acciones (exportar)
+const Encabezado = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h2 {
+    margin-bottom: 0;
+  }
+`;
+
+// El buscador y la cantidad de filas, arriba de la tabla
+const Herramientas = styled.div`
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+`;
+
+const Cuenta = styled.span`
+  font-size: 0.85rem;
+  color: #6b7280;
+`;
+
+// "Historial", al final de la fila de cada paciente
+const BotonHistorial = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 8px 0 12px;
+  border-radius: 10px;
+  background: #f3e8ff;
+  color: #5c0e6d;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #e9d5ff;
+  }
+`;
+
+const SinResultados = styled.div`
+  padding: 40px 24px;
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 0.92rem;
+  color: #6b7280;
+  overflow-wrap: anywhere;
+
+  button {
+    display: block;
+    margin: 12px auto 0;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: #f3e8ff;
+    color: #5c0e6d;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 `;
 
@@ -606,15 +686,40 @@ function InicioView() {
   );
 }
 
-function CalendarView({ rol }) {
+function CalendarView({ rol, alVerHistorial }) {
   const calRol = rol === 'Doctor' ? { rol: 'doctor' } : { rol: 'secreto' };
-  return <CalendarioDoctorSemana rol={calRol} />;
+  return <CalendarioDoctorSemana rol={calRol} alVerHistorial={alVerHistorial} />;
 }
 
-function PatientsView() {
+const cuantos = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+
+// Cuántas filas hay y, si se está buscando, cuántas coinciden
+function Conteo({ encontrados, total, buscando, uno, varios, aclaracion }) {
+  return (
+    <Cuenta role="status">
+      {buscando ? `${encontrados} de ${cuantos(total, uno, varios)}` : cuantos(total, uno, varios)}
+      {buscando && encontrados > 0 && aclaracion && ` · ${aclaracion}`}
+    </Cuenta>
+  );
+}
+
+function NadaEncontrado({ que, busqueda, alBorrar }) {
+  return (
+    <SinResultados>
+      {que} con «{busqueda.trim()}».
+      <button type="button" onClick={alBorrar}>Borrar la búsqueda</button>
+    </SinResultados>
+  );
+}
+
+// `pacienteInicial`: el paciente cuyo historial se abre al entrar (se llega así desde un turno del calendario)
+function PatientsView({ pacienteInicial = null, alVolverAlCalendario }) {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  // El paciente del que se está viendo el historial (null: la lista)
+  const [seleccionado, setSeleccionado] = useState(pacienteInicial);
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -632,41 +737,109 @@ function PatientsView() {
     fetchPatients();
   }, []);
 
+  // La lista y lo que se buscó quedan como estaban para cuando se vuelva del historial
+  if (seleccionado !== null) {
+    const desdeElCalendario = seleccionado === pacienteInicial && !!alVolverAlCalendario;
+    return (
+      <HistorialPaciente
+        key={seleccionado}
+        idPaciente={seleccionado}
+        textoVolver={desdeElCalendario ? 'Volver al calendario' : 'Volver a pacientes'}
+        alVolver={desdeElCalendario ? alVolverAlCalendario : () => setSeleccionado(null)}
+      />
+    );
+  }
+
   if (loading) return <LoadingState>Cargando pacientes...</LoadingState>;
   if (error) return <ErrorState>Error: {error}</ErrorState>;
   if (patients.length === 0) return <LoadingState>No hay pacientes registrados</LoadingState>;
 
+  // Se busca en lo que muestra la tabla
+  const encontrados = filtrar(patients, busqueda,
+    (p) => [p.name_paciente, p.telf_paciente], (p) => [textoSexo(p.genre_paciente)]);
+  const buscando = busqueda.trim() !== '';
+
   return (
     <div>
-      <ViewTitle>Pacientes</ViewTitle>
-      <TableContainer>
-        <Table>
-          <thead>
-            <tr>
-              <Th>Nombre</Th>
-              <Th>Sexo</Th>
-              <Th>Teléfono</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {patients.map((p, i) => (
-              <Tr key={p.id_paciente || i}>
-                <Td data-label="Nombre">{p.name_paciente}</Td>
-                <Td data-label="Sexo">{textoSexo(p.genre_paciente)}</Td>
-                <Td data-label="Teléfono">{p.telf_paciente || '—'}</Td>
-              </Tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableContainer>
+      <Encabezado>
+        <ViewTitle>Pacientes</ViewTitle>
+        {/* Se descarga lo que se está viendo: con una búsqueda, solo los pacientes encontrados */}
+        <BotonesExportar
+          que="pacientes"
+          deshabilitado={encontrados.length === 0}
+          alExcel={() => exportarPacientesExcel(encontrados)}
+          alPdf={() => exportarPacientesPdf(encontrados, { busqueda, total: patients.length })}
+        />
+      </Encabezado>
+
+      <Herramientas>
+        <Buscador
+          valor={busqueda}
+          alCambiar={setBusqueda}
+          etiqueta="Buscar pacientes"
+          placeholder="Buscar por nombre, sexo o teléfono"
+        />
+        <Conteo
+          encontrados={encontrados.length}
+          total={patients.length}
+          buscando={buscando}
+          uno="paciente"
+          varios="pacientes"
+          aclaracion="Excel y PDF llevan solo estos"
+        />
+      </Herramientas>
+
+      {encontrados.length === 0 ? (
+        <NadaEncontrado que="No hay pacientes" busqueda={busqueda} alBorrar={() => setBusqueda('')} />
+      ) : (
+        <TableContainer>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Nombre</Th>
+                <Th>Sexo</Th>
+                <Th>Teléfono</Th>
+                <Th>Historial</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Toda la fila abre el historial; el botón es para el teclado y los lectores de pantalla */}
+              {encontrados.map((p, i) => (
+                <Tr key={p.id_paciente || i} $clic onClick={() => setSeleccionado(p.id_paciente)}>
+                  <Td data-label="Nombre">{p.name_paciente}</Td>
+                  <Td data-label="Sexo">{textoSexo(p.genre_paciente)}</Td>
+                  <Td data-label="Teléfono">{p.telf_paciente || '—'}</Td>
+                  <Td data-label="Historial">
+                    <BotonHistorial type="button" aria-label={`Ver el historial de ${p.name_paciente}`}>
+                      Ver <FiChevronRight aria-hidden />
+                    </BotonHistorial>
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
+        </TableContainer>
+      )}
     </div>
   );
+}
+
+// "12 oct 2026", como se ve en la tabla de citas
+const fechaCorta = (dateCita) =>
+  new Date(dateCita).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+
+// La fecha de una cita escrita de las formas en que alguien la puede buscar
+function fechasDeBusqueda(dateCita) {
+  const dia = String(dateCita || '').slice(0, 10); // 2026-10-12
+  const alReves = dia.split('-').reverse(); // 12, 10, 2026
+  return [fechaCorta(dateCita), dia, alReves.join('/'), alReves.join('-')];
 }
 
 function CitasView() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -688,37 +861,66 @@ function CitasView() {
   if (error) return <ErrorState>Error: {error}</ErrorState>;
   if (appointments.length === 0) return <LoadingState>No hay citas registradas</LoadingState>;
 
+  const encontradas = filtrar(appointments, busqueda,
+    (c) => [c.name_paciente, ...fechasDeBusqueda(c.date_cita), c.desc_cita], (c) => [c.status_cita]);
+
   return (
     <div>
-      <ViewTitle>Todas las citas</ViewTitle>
-      <TableContainer>
-        <Table>
-          <thead>
-            <tr>
-              <Th>Paciente</Th>
-              <Th>Fecha</Th>
-              <Th>Descripción</Th>
-              <Th>Estado</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.map((c, i) => {
-              const date = new Date(c.date_cita);
-              const dateStr = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-              return (
+      <Encabezado>
+        <ViewTitle>Todas las citas</ViewTitle>
+        <BotonesExportar
+          que="citas"
+          deshabilitado={encontradas.length === 0}
+          alExcel={() => exportarCitasExcel(encontradas.map(turnoDeCita))}
+          alPdf={() => exportarCitasPdf(encontradas.map(turnoDeCita), { busqueda, total: appointments.length })}
+        />
+      </Encabezado>
+
+      <Herramientas>
+        <Buscador
+          valor={busqueda}
+          alCambiar={setBusqueda}
+          etiqueta="Buscar citas"
+          placeholder="Buscar por paciente, fecha, motivo o estado"
+        />
+        <Conteo
+          encontrados={encontradas.length}
+          total={appointments.length}
+          buscando={busqueda.trim() !== ''}
+          uno="cita"
+          varios="citas"
+          aclaracion="Excel y PDF llevan solo estas"
+        />
+      </Herramientas>
+
+      {encontradas.length === 0 ? (
+        <NadaEncontrado que="No hay citas" busqueda={busqueda} alBorrar={() => setBusqueda('')} />
+      ) : (
+        <TableContainer>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Paciente</Th>
+                <Th>Fecha</Th>
+                <Th>Descripción</Th>
+                <Th>Estado</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {encontradas.map((c, i) => (
                 <Tr key={c.id_citas || i}>
                   <Td data-label="Paciente"><strong>{c.name_paciente}</strong></Td>
-                  <Td data-label="Fecha">{dateStr}</Td>
+                  <Td data-label="Fecha">{fechaCorta(c.date_cita)}</Td>
                   <Td data-label="Descripción">{c.desc_cita}</Td>
                   <Td data-label="Estado">
                     <EtiquetaEstado estado={c.status_cita} />
                   </Td>
                 </Tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </TableContainer>
+              ))}
+            </tbody>
+          </Table>
+        </TableContainer>
+      )}
     </div>
   );
 }
@@ -762,10 +964,17 @@ export default function Dashboard({ user, onLogout }) {
   const tutorial = useTutorial(user);
   // El módulo que el tutorial está explicando (null: el que la persona tenía abierto)
   const [vistaTutorial, setVistaTutorial] = useState(null);
+  // El paciente cuyo historial se pidió ver desde un turno del calendario
+  const [historialDe, setHistorialDe] = useState(null);
 
   const rol = user?.nombre_rol || '';
   const navItems = getNavItems(rol);
   const vistaVisible = (tutorial.abierto && vistaTutorial) || activeView;
+
+  const abrirModulo = (modulo, idPaciente = null) => {
+    setHistorialDe(idPaciente);
+    setActiveView(modulo);
+  };
 
   const cerrarTutorial = () => {
     setVistaTutorial(null);
@@ -777,9 +986,15 @@ export default function Dashboard({ user, onLogout }) {
       case 'inicio':
         return <InicioView />;
       case 'calendario':
-        return <CalendarView rol={rol} />;
+        return <CalendarView rol={rol} alVerHistorial={(idPaciente) => abrirModulo('pacientes', idPaciente)} />;
       case 'pacientes':
-        return <PatientsView />;
+        return (
+          <PatientsView
+            key={historialDe ?? 'lista'}
+            pacienteInicial={historialDe}
+            alVolverAlCalendario={() => abrirModulo('calendario')}
+          />
+        );
       case 'citas':
         return <CitasView />;
       case 'agendar':
@@ -803,7 +1018,7 @@ export default function Dashboard({ user, onLogout }) {
                 aria-current={vistaVisible === item.key ? 'page' : undefined}
                 aria-label={item.label}
                 data-tutorial={`menu menu-${item.key}`}
-                onClick={() => setActiveView(item.key)}
+                onClick={() => abrirModulo(item.key)}
               >
                 <NavIcon aria-hidden><Icon /></NavIcon>
                 <TextoLargo aria-hidden>{item.label}</TextoLargo>

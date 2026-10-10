@@ -8,10 +8,12 @@ import esLocale from "@fullcalendar/core/locales/es";
 import { useMediaQuery } from "../utils/useMediaQuery";
 import { movil, ANCHO_MOVIL } from "../estilos/medidas";
 import EventModal from "./EventModal";
+import BotonesExportar from "./BotonesExportar";
 import styled from "styled-components";
 import { apiFetch } from "../api";
 import { finCita, toFechaCita, BUSINESS_HOURS } from "../utils/agenda";
 import { colorEvento } from "../utils/estados";
+import { exportarAgendaExcel, exportarAgendaPdf } from "../exportar/citas";
 
 const CalendarWrapper = styled.div`
     padding: 24px;
@@ -105,7 +107,33 @@ const LoadingState = styled.div`
     color: #6b7280;
 `;
 
-const CalendarioDoctorSemana = (rol) => {
+// Arriba del calendario: descargar la agenda del período que se está viendo
+const BarraAgenda = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-bottom: 16px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    color: #6b7280;
+
+    /* En el celular queda "Descargar:", para que entre en un renglón con los botones */
+    ${movil} {
+        em {
+            display: none;
+        }
+    }
+
+    em {
+        font-style: normal;
+    }
+`;
+
+// rol: { rol: 'secreto' } (puede mover y estirar turnos) o { rol: 'doctor' } (solo los ve)
+// alVerHistorial(idPaciente): abre el historial del paciente de un turno
+const CalendarioDoctorSemana = ({ rol, alVerHistorial }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [lista, setLista] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -121,7 +149,7 @@ const CalendarioDoctorSemana = (rol) => {
     setRefreshKey(prev => prev + 1);
   };
 
-  const isEditable = rol?.rol?.rol === 'secreto';
+  const isEditable = rol?.rol === 'secreto';
 
   // En celular una semana no entra: se muestra un día por vez (o la lista de la semana)
   const esMovil = useMediaQuery(`(max-width: ${ANCHO_MOVIL}px)`);
@@ -156,6 +184,7 @@ const CalendarioDoctorSemana = (rol) => {
               direccion: cita.dir_paciente,
               telefono: cita.telf_paciente,
               email: cita.email_user,
+              idPaciente: cita.id_paciente,
               estatus: status,
               start: fechaInicio, 
               end: fechaFinal,
@@ -213,6 +242,27 @@ const CalendarioDoctorSemana = (rol) => {
     shootTrigger();
   }
 
+  // Descarga, como agenda, los turnos del período que se está viendo (la semana o el día)
+  function descargarAgenda(exportar) {
+    const { currentStart, currentEnd, title } = calendarRef.current.getApi().view;
+    const [desde, hasta] = [toFechaCita(currentStart), toFechaCita(currentEnd)];
+    const turnos = lista
+      .filter((evento) => evento.start >= desde && evento.start < hasta)
+      .map((evento) => ({
+        inicio: evento.start,
+        fin: evento.end,
+        paciente: evento.title,
+        telefono: evento.extendedProps.telefono,
+        motivo: evento.description,
+        estado: evento.extendedProps.estatus,
+      }));
+    if (turnos.length === 0) {
+      window.alert('No hay turnos en este período para descargar.');
+      return;
+    }
+    exportar(turnos, { titulo: title, desde: desde.slice(0, 10) });
+  }
+
   if (isLoading) {
     return <LoadingState>Cargando turnos...</LoadingState>;
   }
@@ -225,8 +275,18 @@ const CalendarioDoctorSemana = (rol) => {
         onClose={closeModal}
         info={Citado}
         trigger={shootTrigger}
+        onVerHistorial={alVerHistorial && ((idPaciente) => { closeModal(); alVerHistorial(idPaciente); })}
       />
-      
+
+      <BarraAgenda>
+        <span>Descargar<em> esta agenda</em>:</span>
+        <BotonesExportar
+          que="la agenda"
+          alExcel={() => descargarAgenda(exportarAgendaExcel)}
+          alPdf={() => descargarAgenda(exportarAgendaPdf)}
+        />
+      </BarraAgenda>
+
       <FullCalendar
         ref={calendarRef}
         plugins={[DayGridPlugin, TimeGridPlugin, ListPlugin, InteractionPlugin]}

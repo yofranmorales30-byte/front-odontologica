@@ -224,6 +224,29 @@ const LogicButton = styled.button`
     }
 `;
 
+// "Ver historial": lleva a la ficha del paciente con todos sus procedimientos
+const HistorialButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    margin-top: 14px;
+    padding: 10px 16px;
+    border: 1.5px solid #e9d5ff;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #5c0e6d;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background: #faf5ff;
+        border-color: #c084fc;
+    }
+`;
+
 const LogicSection = styled.div`
     background: #f0fdf4;
     border-radius: 10px;
@@ -231,7 +254,7 @@ const LogicSection = styled.div`
     margin-top: 12px;
 `;
 
-const EventModal = ({ isOpen, onClose, info, trigger }) => {
+const EventModal = ({ isOpen, onClose, info, trigger, onVerHistorial }) => {
     const cerrarRef = useRef(null);
 
     useEffect(() => {
@@ -332,6 +355,12 @@ const EventModal = ({ isOpen, onClose, info, trigger }) => {
                                 <DateBadge>{mostrarFechaHora(info?.extendedProps?.end)}</DateBadge>
                             </DateRow>
                         </DateGroup>
+
+                        {onVerHistorial && info?.extendedProps?.idPaciente != null && (
+                            <HistorialButton type="button" onClick={() => onVerHistorial(info.extendedProps.idPaciente)}>
+                                Ver historial del paciente
+                            </HistorialButton>
+                        )}
                     </InfoColumn>
 
                     <InfoColumn $flex={1}>

@@ -115,31 +115,37 @@ const MODULOS = {
   }),
   calendario: (rol) => ({
     texto: 'La agenda de la clínica, de lunes a sábado. Cada turno tiene el color de su estado.',
-    puntos: gestiona(rol)
-      ? [
-          'Tocá un turno para ver los datos del paciente, y confirmarlo o cancelarlo.',
-          'Arrastralo para pasarlo a otro horario.',
-          'Estiralo desde abajo para cambiar cuánto dura.',
-        ]
-      : [
-          'Tocá un turno para ver los datos del paciente y el motivo de la consulta.',
-          'Desde ahí podés confirmarlo o cancelarlo.',
-          'Mover un turno o cambiar su duración lo hace quien lleva la agenda: asistente o administrador.',
-        ],
+    puntos: [
+      ...(gestiona(rol)
+        ? [
+            'Tocá un turno para ver los datos del paciente, y confirmarlo o cancelarlo.',
+            'Arrastralo para pasarlo a otro horario.',
+            'Estiralo desde abajo para cambiar cuánto dura.',
+          ]
+        : [
+            'Tocá un turno para ver los datos del paciente y el motivo, y confirmarlo o cancelarlo.',
+            'Moverlo o cambiar su duración lo hace el asistente o el administrador.',
+          ]),
+      // Corto: este paso es el más largo y en un celular chico la tarjeta tiene que entrar sobre el menú
+      'Con Excel o PDF descargás la agenda que estás viendo.',
+    ],
     leyenda: COLORES_CALENDARIO,
   }),
   pacientes: (rol) => ({
     texto: 'La lista de los pacientes de la clínica, con su sexo y su teléfono.',
-    puntos: gestiona(rol)
-      ? [
-          'Los que se registran desde la web aparecen acá solos.',
-          'A los demás los cargás desde "Agendar turno", al darles su primer turno.',
-        ]
-      : undefined,
+    puntos: [
+      'Tocá un paciente para ver su historial: todos los procedimientos que se hizo.',
+      'Con el buscador lo encontrás por su nombre o su teléfono.',
+      'Con Excel y PDF descargás la lista.',
+      ...(gestiona(rol) ? ['Los pacientes nuevos se cargan desde "Agendar turno", o se registran solos en la web.'] : []),
+    ],
   }),
   citas: () => ({
     texto: 'Todas las citas en una sola lista, con el paciente, la fecha, el motivo y el estado.',
-    nota: 'Sirve para repasar los turnos sin recorrer el calendario semana por semana.',
+    puntos: [
+      'Con el buscador encontrás un turno por paciente, fecha, motivo o estado.',
+      'Con los botones Excel y PDF descargás la lista.',
+    ],
   }),
   agendar: () => ({
     texto: 'Para cargar un turno a nombre de un paciente, en tres pasos:',

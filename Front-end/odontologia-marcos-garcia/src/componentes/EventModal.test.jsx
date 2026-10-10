@@ -46,3 +46,20 @@ test('una cita cancelada se puede ocultar de la agenda', () => {
   const texto = screen.getByText(/Esta cita fue cancelada\./);
   expect(texto.closest('div').style.display).toBe('block');
 });
+
+test('desde un turno se puede ir al historial del paciente', () => {
+  const onVerHistorial = vi.fn();
+  render(<EventModal isOpen onClose={() => {}} trigger={() => {}} onVerHistorial={onVerHistorial} info={cita({ idPaciente: 7 })} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ver historial del paciente' }));
+  expect(onVerHistorial).toHaveBeenCalledWith(7);
+});
+
+test('sin a dónde ir, o sin saber de qué paciente es el turno, no ofrece el historial', () => {
+  const sinDestino = abrir({ idPaciente: 7 });
+  expect(screen.queryByRole('button', { name: 'Ver historial del paciente' })).toBeNull();
+  sinDestino.unmount();
+
+  render(<EventModal isOpen onClose={() => {}} trigger={() => {}} onVerHistorial={() => {}} info={cita({})} />);
+  expect(screen.queryByRole('button', { name: 'Ver historial del paciente' })).toBeNull();
+});

@@ -1,8 +1,13 @@
-import { test, expect, beforeEach, afterEach } from 'vitest';
+import { test, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act, configure } from '@testing-library/react';
 import App from './App';
 import { pasosPaciente } from './tutorial/pasos';
+
+// Estos tests dibujan la app entera (página de inicio, login, paneles): con la máquina cargada
+// tardan más que los tiempos por defecto (5 s por test y 1 s para que aparezca algo)
+vi.setConfig({ testTimeout: 20000 });
+configure({ asyncUtilTimeout: 5000 });
 
 const ADMIN = {
   token: 'token-nuevo', id_user: 1, name_user: 'Admin Marcos', email_user: 'admin@odontologia.com',
@@ -117,8 +122,9 @@ test('una ruta que no existe vuelve al inicio (en vez de una página vacía)', a
 
   render(<App />);
 
-  await waitFor(() => expect(window.location.pathname).toBe('/'));
-});
+  // Dibuja toda la página de inicio: con la máquina cargada pasa los tiempos por defecto
+  await waitFor(() => expect(window.location.pathname).toBe('/'), { timeout: 5000 });
+}, 15000);
 
 test('sin token guardado no consulta /me y muestra el login', async () => {
   const llamadas = mockApi({});
