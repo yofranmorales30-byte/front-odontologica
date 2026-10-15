@@ -116,10 +116,20 @@ El frontend se puede instalar en el celular o la computadora como una app, con e
 - **Instalar:** en Android, Chrome o Edge aparece "Instalar app" en el menú de la página (o en la barra del navegador). En iPhone: Compartir → "Agregar a inicio".
 - **Invitación a instalarla** (`src/pwa/PromoInstalacion.jsx`): un modal con los beneficios y el botón "Instalar app" (en iPhone, los dos pasos). En el celular sube desde abajo; en la computadora va centrado. Aparece sola en la página de inicio (a los 4 segundos en el celular, a los 7 en la computadora) y al entrar al panel (a los 1,5 segundos). No aparece si el navegador no permite instalar, si la app ya está instalada ni mientras la persona está escribiendo en un formulario. Con "Ahora no" no vuelve por 14 días.
 - **Botón "Instalar app":** está en el menú de la página, en el panel del paciente y en la barra del panel del personal. Abre la instalación aunque la invitación esté pospuesta, y al terminar se muestra un aviso de confirmación.
-- **Sin conexión:** la app abre igual (página, login y formularios quedan guardados), pero los turnos y los datos de pacientes **nunca se guardan en el dispositivo**: siempre se piden al servidor. Sin internet se muestra un aviso.
+- **Sin conexión:** la app abre igual (página, login y formularios quedan guardados), pero los turnos y los datos de pacientes **nunca se guardan en el dispositivo**: siempre se piden al servidor. Sin internet se muestra un aviso. Las fotos y las fuentes se guardan la primera vez que se ven, no todas de entrada.
 - **Actualizaciones:** cuando se publica una versión nueva, la app avisa y el usuario elige cuándo actualizar, para no perder un formulario a medio completar.
 - **Probarla:** el service worker no se activa con `npm run dev`. Usar `npm run build && npm run preview`. En producción tiene que servirse por **HTTPS** (los navegadores solo permiten service workers en HTTPS o en `localhost`).
 - **Íconos:** salen de `public/favicon.svg`. Si cambia el logo, se regeneran con `npx @vite-pwa/assets-generator@1 --preset minimal-2023 public/favicon.svg` (produce los mismos nombres de archivo que usa `vite.config.js`).
+
+## Rendimiento
+
+Decisiones que hacen que la página cargue rápido en un celular. Conviene no deshacerlas sin medir:
+
+- **Fuentes propias:** Poppins y Dancing Script se sirven desde la app (`@fontsource`, solo el subconjunto latino y los grosores que se usan, importados en `src/index.jsx`). No hay que volver a poner el enlace a Google Fonts: su hoja de estilos frenaba el primer dibujo cerca de un segundo en 4G.
+- **Mapa a pedido:** el mapa de Google (`src/componentes/ClinicMap.jsx`) carga unos 430 KB de código, así que solo se abre cuando la persona toca "Ver el mapa". "Cómo llegar" abre Google Maps.
+- **Fotos livianas:** las de servicios son WebP de 600×400 y se cargan al acercarse a ellas; las del fondo del login, WebP que se descargan de a una a medida que avanza la presentación. Una foto nueva conviene pasarla a WebP antes de agregarla.
+- **Código por partes:** el login, el registro y los paneles se descargan aparte de la página de inicio, y se piden en segundo plano mientras la persona la mira.
+- **API despierta:** las funciones de Vercel se duermen sin uso y despertarlas suma cerca de un segundo. La app las despierta con un pedido a `/api/salud` al abrirse sin sesión y al volver a la pestaña después de unos minutos (`src/apiWarmUp.js`).
 
 ## Tutorial de cada panel
 
