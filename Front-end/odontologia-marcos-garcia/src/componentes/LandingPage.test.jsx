@@ -14,3 +14,16 @@ test('la landing no usa emojis: los íconos son SVG de react-icons', () => {
   const iconos = [...container.querySelectorAll('#nosotros svg, #contacto svg')];
   expect(iconos.length).toBeGreaterThanOrEqual(7);
 });
+
+test('the home page loads nothing heavy up front: lazy photos with their size, no Google map', () => {
+  const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+
+  const photos = [...container.querySelectorAll('#servicios img')];
+  expect(photos.length).toBe(18); // 9 services, twice for the looping carousel
+  for (const photo of photos) {
+    expect(photo.getAttribute('loading')).toBe('lazy');
+    expect(photo.getAttribute('width')).toBe('600');
+    expect(photo.getAttribute('src')).toMatch(/\.webp$/);
+  }
+  expect(container.querySelector('iframe')).toBeNull();
+});

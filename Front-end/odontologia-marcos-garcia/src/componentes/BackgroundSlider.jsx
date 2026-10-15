@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import styled, { keyframes, css } from "styled-components";
 
-import bg1 from "../assets/images/limpieza.jpg";
-import bg2 from "../assets/images/protesis.jpg";
-import bg3 from "../assets/images/blanqueamiento.jpg";
-import bg4 from "../assets/images/cirugia.jpg";
-import bg5 from "../assets/images/ortodoncia_correctiva.jpg";
+import cleaning from "../assets/images/backgrounds/cleaning.webp";
+import prosthesis from "../assets/images/backgrounds/prosthesis.webp";
+import whitening from "../assets/images/backgrounds/whitening.webp";
+import surgery from "../assets/images/backgrounds/surgery.webp";
+import correctiveOrthodontics from "../assets/images/backgrounds/corrective-orthodontics.webp";
 
-const images = [bg1, bg2, bg3, bg4, bg5];
+const images = [cleaning, prosthesis, whitening, surgery, correctiveOrthodontics];
 
 const bgFade = keyframes`
     from { opacity: 0; transform: scale(1.08); }
@@ -30,7 +30,7 @@ const BgSlide = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url(${props => props.$src});
+    ${props => props.$src && css`background-image: url(${props.$src});`}
     background-size: cover;
     background-position: center;
     opacity: ${props => (props.$active ? 1 : 0)};
@@ -56,22 +56,23 @@ const AUTOPLAY_INTERVAL = 5000;
 
 const BackgroundSlider = () => {
     const [current, setCurrent] = useState(0);
-
-    const goNext = useCallback(() => {
-        setCurrent(prev => (prev + 1) % images.length);
-    }, []);
+    // Only the photo on screen and the next one are downloaded; the rest arrive as the slideshow advances
+    const [lastLoaded, setLastLoaded] = useState(1);
 
     useEffect(() => {
-        const id = setInterval(goNext, AUTOPLAY_INTERVAL);
+        const id = setInterval(() => {
+            setCurrent(prev => (prev + 1) % images.length);
+            setLastLoaded(loaded => Math.min(images.length - 1, loaded + 1));
+        }, AUTOPLAY_INTERVAL);
         return () => clearInterval(id);
-    }, [goNext]);
+    }, []);
 
     return (
         <BgContainer>
             {images.map((img, i) => (
                 <BgSlide
-                    key={i}
-                    $src={img}
+                    key={img}
+                    $src={i <= lastLoaded ? img : undefined}
                     $active={i === current}
                     aria-hidden={i !== current}
                 />

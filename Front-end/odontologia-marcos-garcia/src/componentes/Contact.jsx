@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { FiMapPin, FiPhone, FiClock, FiInstagram } from "react-icons/fi";
 import { LuStethoscope } from "react-icons/lu";
+import ClinicMap from "./ClinicMap";
 
 /* ===== PAGE ===== */
 const PageSection = styled.div`
@@ -48,16 +49,6 @@ const ContentRow = styled.div`
 const MapColumn = styled.div`
     flex: 1.2;
     min-width: 0;
-`;
-
-const MapWrapper = styled.div`
-    width: 100%;
-    height: 100%;
-    min-height: 380px;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border: 1px solid #f0f0f0;
 `;
 
 const InfoColumn = styled.div`
@@ -206,17 +197,7 @@ const Contact = () => {
 
             <ContentRow>
                 <MapColumn>
-                    <MapWrapper>
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.552235038035!2d-72.25380222581435!3d8.045011991982193!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e6661448c4b9ae3%3A0xc7e373437952adaf!2sArmonia..%20Odontologia%20y%20Estetica%20Facial!5e0!3m2!1ses!2sve!4v1784422611532!5m2!1ses!2sve"
-                            width="100%"
-                            height="100%"
-                            style={{ border: 0, display: 'block', minHeight: '380px' }}
-                            allowFullScreen=""
-                            loading="lazy"
-                            title="Ubicación de Armonía Odontología"
-                        ></iframe>
-                    </MapWrapper>
+                    <ClinicMap />
                 </MapColumn>
 
                 <InfoColumn>

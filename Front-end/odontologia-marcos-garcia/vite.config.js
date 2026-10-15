@@ -55,24 +55,19 @@ export default defineConfig(({ command, mode }) => {
           ],
         },
         workbox: {
-          // La app (HTML, JS, CSS, imágenes) queda guardada: abre aunque no haya conexión
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,webmanifest}'],
+          // The app shell is stored up front so it opens offline. Photos and fonts are stored the first time
+          // they are shown, so a phone does not download every photo in the background on its first visit.
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//],
-          // Los datos de la API NO se guardan: turnos y pacientes siempre salen del servidor
+          // API data is never stored: appointments and patients always come from the server
           runtimeCaching: [
             {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'StaleWhileRevalidate',
-              options: { cacheName: 'google-fonts-css' },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              urlPattern: ({ request, sameOrigin }) => sameOrigin && (request.destination === 'image' || request.destination === 'font'),
               handler: 'CacheFirst',
               options: {
-                cacheName: 'google-fonts',
-                expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] },
+                cacheName: 'media',
+                expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 365 },
               },
             },
           ],

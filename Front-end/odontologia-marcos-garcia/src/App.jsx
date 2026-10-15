@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import {
     BrowserRouter as Router,
     Routes,
@@ -6,12 +6,22 @@ import {
     Navigate,
 } from "react-router-dom";
 import { apiFetch, getStoredToken, setAuthToken, setUnauthorizedHandler } from './api';
+import { wakeUpApi, keepApiAwake } from './apiWarmUp';
 import Navbar from "./componentes/Navbar";
 import LandingPage from "./componentes/LandingPage";
-import SignUp from "./componentes/SignUp";
 import AvisosPWA from "./pwa/AvisosPWA";
 import PromoInstalacion from "./pwa/PromoInstalacion";
 import { useTutorialEnCurso } from "./tutorial/useTutorial";
+
+// The login, the sign-up and the panels are a separate download: the home page does not need them
+const loadSignUp = () => import("./componentes/SignUp");
+const SignUp = lazy(loadSignUp);
+
+const loading = (
+    <div style={{ minHeight: '100vh', paddingTop: '140px', textAlign: 'center', fontFamily: 'Poppins, sans-serif', color: '#6b7280' }}>
+        Cargando...
+    </div>
+);
 
 export default function App() {
     const [user, setUser] = useState(null);
@@ -52,6 +62,20 @@ export default function App() {
             .finally(() => setRestaurando(false));
     }, [handleLogin, handleLogout]);
 
+    // Without a saved session the API is woken up while the person reads or types (with one, /me does it)
+    useEffect(() => {
+        if (!getStoredToken()) wakeUpApi();
+        return keepApiAwake();
+    }, []);
+
+    // While the home page is on screen, the login is fetched in the background so "Ingresar" opens at once
+    useEffect(() => {
+        const whenIdle = window.requestIdleCallback || ((callback) => setTimeout(callback, 2000));
+        const cancel = window.cancelIdleCallback || clearTimeout;
+        const id = whenIdle(() => { loadSignUp(); });
+        return () => cancel(id);
+    }, []);
+
     if (restaurando) return null;
 
     return (
@@ -60,13 +84,18 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/home" element={<LandingPage />} />
+                {/* The key starts SignUp fresh on every login and logout: after logging out it shows the login,
+                    not the sign-up form that was open before */}
                 <Route path="/sign-up" element={
-                    <SignUp
-                        isAuthenticated={isAuthenticated}
-                        user={user}
-                        onLogin={handleLogin}
-                        onLogout={handleLogout}
-                    />
+                    <Suspense fallback={loading}>
+                        <SignUp
+                            key={user ? 'session' : 'guest'}
+                            isAuthenticated={isAuthenticated}
+                            user={user}
+                            onLogin={handleLogin}
+                            onLogout={handleLogout}
+                        />
+                    </Suspense>
                 } />
                 {/* El hosting manda cualquier URL a la app: una ruta que no existe vuelve al inicio */}
                 <Route path="*" element={<Navigate to="/" replace />} />

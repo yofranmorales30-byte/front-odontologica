@@ -59,6 +59,8 @@ test('al recargar con un token guardado recupera la sesión', async () => {
   // El panel se carga en diferido (lazy): la primera vez tarda más que el segundo por defecto
   expect(await screen.findByText('Hola, Admin Marcos', {}, { timeout: 5000 })).toBeTruthy();
   expect(llamadas[0]).toEqual({ ruta: '/me', auth: 'Bearer token-guardado' });
+  // With a saved session /me already wakes the API up: no extra ping
+  expect(llamadas.some((l) => l.ruta === '/salud')).toBe(false);
   // /me devuelve un token nuevo y reemplaza al guardado
   expect(sessionStorage.getItem('armonia.token')).toBe('token-nuevo');
 });
@@ -133,4 +135,51 @@ test('sin token guardado no consulta /me y muestra el login', async () => {
 
   expect(await screen.findByText('Bienvenido')).toBeTruthy();
   expect(llamadas.some((l) => l.ruta === '/me')).toBe(false);
+});
+
+test('without a saved session the API is woken up right away', async () => {
+  const calls = mockApi({});
+  render(<App />);
+
+  expect(await screen.findByText('Bienvenido')).toBeTruthy();
+  expect(calls.map((c) => c.ruta)).toContain('/salud');
+});
+
+// A weekday at least a week ahead, as YYYY-MM-DD
+function weekdayAhead() {
+  const day = new Date();
+  day.setDate(day.getDate() + 7);
+  while (day.getDay() === 0 || day.getDay() === 6) day.setDate(day.getDate() + 1);
+  return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+}
+
+test('after signing up and then logging out, the login shows up (not the sign-up form)', async () => {
+  mockApi({
+    '/registro': [201, { token: 't', id_user: 6, name_user: 'Ana Pérez', fk_rol: 4, nombre_rol: 'Paciente', id_paciente: 3 }],
+  });
+  render(<App />);
+  const change = (element, value) => fireEvent.change(element, { target: { value } });
+
+  fireEvent.click(await screen.findByRole('button', { name: /Registrarse/ }));
+  change(await screen.findByPlaceholderText('Tu nombre completo'), 'Ana Pérez');
+  change(screen.getAllByRole('combobox')[0], 'F');
+  change(document.querySelector('input[type="date"]'), '1990-05-15');
+  change(screen.getByPlaceholderText('tu@correo.com'), 'ana@x.com');
+  change(screen.getByPlaceholderText('Tu contraseña'), 'clave123');
+  change(screen.getByPlaceholderText('Repetí tu contraseña'), 'clave123');
+  fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
+  change(document.querySelector('input[type="date"]'), weekdayAhead());
+  change(screen.getByRole('combobox'), '1');
+  change(document.querySelector('input[type="time"]'), '10:00');
+  fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
+  change(screen.getByPlaceholderText(/motivo de tu consulta/), 'Control');
+  fireEvent.click(screen.getByRole('button', { name: /Crear cuenta y agendar/ }));
+
+  // The welcome message stays two seconds, then the patient panel opens with its tutorial
+  expect(await screen.findByText('Mis citas', {}, { timeout: 8000 })).toBeTruthy();
+  fireEvent.keyDown(document, { key: 'Escape' });
+  fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+
+  expect(await screen.findByText('Bienvenido')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Crear cuenta y agendar/ })).toBeNull();
 });
